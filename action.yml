@@ -1,0 +1,101 @@
+name: Star History CI
+description: Generate star-history SVGs and publish stable light/dark URLs from an output branch.
+author: ranxi2001
+
+branding:
+  icon: star
+  color: yellow
+
+inputs:
+  repos:
+    description: Comma-separated owner/repo list. Defaults to the repository that runs the workflow.
+    required: false
+    default: ${{ github.repository }}
+  token:
+    description: GitHub token used by the renderer to read stargazer data.
+    required: false
+    default: ${{ github.token }}
+  github-token:
+    description: GitHub token used to publish the generated SVGs to the output branch.
+    required: false
+    default: ${{ github.token }}
+  output-dir:
+    description: Temporary directory where rendered SVGs are written before publishing.
+    required: false
+    default: star-history
+  publish-branch:
+    description: Branch that will host the generated SVG files.
+    required: false
+    default: output
+  file-prefix:
+    description: Stable SVG filename prefix.
+    required: false
+    default: star-history
+  type:
+    description: Chart mode passed to the renderer. Usually Date or Timeline.
+    required: false
+    default: Date
+  themes:
+    description: Comma-separated themes to render.
+    required: false
+    default: light,dark
+  width:
+    description: SVG width in pixels.
+    required: false
+    default: "800"
+  force-orphan:
+    description: Whether to publish the output branch as an orphan branch.
+    required: false
+    default: "true"
+
+outputs:
+  light:
+    description: Relative path to the stable light SVG.
+    value: ${{ steps.normalize.outputs.light }}
+  dark:
+    description: Relative path to the stable dark SVG.
+    value: ${{ steps.normalize.outputs.dark }}
+  light_url:
+    description: Raw GitHub URL for the stable light SVG.
+    value: ${{ steps.normalize.outputs.light_url }}
+  dark_url:
+    description: Raw GitHub URL for the stable dark SVG.
+    value: ${{ steps.normalize.outputs.dark_url }}
+  files:
+    description: Newline-separated list of stable SVG paths.
+    value: ${{ steps.normalize.outputs.files }}
+
+runs:
+  using: composite
+  steps:
+    - name: Render star history
+      id: render
+      uses: narayann7/star-history-action@v1
+      with:
+        repos: ${{ inputs.repos }}
+        token: ${{ inputs.token }}
+        type: ${{ inputs.type }}
+        themes: ${{ inputs.themes }}
+        width: ${{ inputs.width }}
+        output-dir: ${{ inputs.output-dir }}
+        commit: "false"
+        update-readme: "false"
+
+    - name: Normalize stable filenames
+      id: normalize
+      shell: bash
+      env:
+        OUTPUT_DIR: ${{ inputs.output-dir }}
+        FILE_PREFIX: ${{ inputs.file-prefix }}
+        THEMES: ${{ inputs.themes }}
+        REPOSITORY: ${{ github.repository }}
+        PUBLISH_BRANCH: ${{ inputs.publish-branch }}
+      run: bash "${{ github.action_path }}/scripts/normalize-star-history.sh"
+
+    - name: Publish output branch
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ inputs.github-token }}
+        publish_dir: ${{ inputs.output-dir }}
+        publish_branch: ${{ inputs.publish-branch }}
+        force_orphan: ${{ inputs.force-orphan }}

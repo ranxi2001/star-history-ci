@@ -1,0 +1,25 @@
+name: Bug report
+description: Report a problem with the action or workflow examples.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the problem and what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Workflow snippet
+      description: Paste the relevant part of your workflow file.
+      render: yaml
+  - type: textarea
+    id: logs
+    attributes:
+      label: Action logs
+      description: Paste the relevant log output if available.
+      render: text
