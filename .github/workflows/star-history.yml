@@ -16,8 +16,23 @@ jobs:
   star-history:
     runs-on: ubuntu-latest
     steps:
+      - name: Check stargazer token
+        id: stargazer_token
+        shell: bash
+        env:
+          STAR_HISTORY_TOKEN: ${{ secrets.STAR_HISTORY_TOKEN }}
+        run: |
+          if [[ -n "$STAR_HISTORY_TOKEN" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Skipping star-history update because STAR_HISTORY_TOKEN is not configured."
+          fi
+
       - uses: actions/checkout@v4
 
       - uses: ./
+        if: ${{ steps.stargazer_token.outputs.available == 'true' }}
         with:
           repos: ${{ github.repository }}
+          token: ${{ secrets.STAR_HISTORY_TOKEN }}

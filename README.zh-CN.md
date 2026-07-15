@@ -2,21 +2,25 @@
 
 [English](README.md)
 
-一个很小的 Star History 自动化方案：GitHub Actions 生成 SVG，把文件名固定成 `star-history-light.svg` / `star-history-dark.svg`，再发布到 `output` 分支。README 只引用稳定的 `raw.githubusercontent.com` URL，不需要反复改主分支。
+一个自包含的 Star History 自动化方案：GitHub Actions 生成 SVG，把文件名固定成 `star-history-light.svg` / `star-history-dark.svg`，再发布到 `output` 分支。README 只引用稳定的 `raw.githubusercontent.com` URL，不需要反复改主分支。
 
-这个项目刻意保持简单：它把一个优雅的 CI 用法封装成可复用 action，同时保留一份可直接复制的 standalone workflow。
+渲染器和 `output` 分支发布脚本都直接放在当前仓库中，运行时不再调用第三方的渲染或发布 Action。
 
 ## 工作方式
 
 ```text
 定时或手动触发 workflow
-  -> 生成亮色/暗色 star-history SVG
-  -> 把带时间戳的文件改成稳定文件名
-  -> 发布到 output 分支
+  -> 安装锁定版本的渲染依赖
+  -> 在本地生成稳定文件名的亮色/暗色 SVG
+  -> 用仓库内的 git 脚本发布到 output 分支
   -> README 引用 raw SVG URL
 ```
 
 ## 快速使用
+
+先创建名为 `STAR_HISTORY_TOKEN` 的仓库 Secret。它应保存属于该仓库管理员或
+协作者的 PAT。优先使用仅授权当前仓库、只有只读 Metadata 权限的 fine-grained
+PAT；classic PAT 需要 `public_repo` scope。
 
 在目标仓库创建 `.github/workflows/star-history.yml`：
 
@@ -44,6 +48,7 @@ jobs:
       - uses: ranxi2001/star-history-ci@v1
         with:
           repos: ${{ github.repository }}
+          token: ${{ secrets.STAR_HISTORY_TOKEN }}
 ```
 
 然后在 README 中引用 `output` 分支的稳定 SVG：
@@ -64,7 +69,7 @@ jobs:
 | Name | Default | Description |
 | --- | --- | --- |
 | `repos` | `${{ github.repository }}` | 要生成图表的仓库，支持逗号分隔的 `owner/repo` 列表。 |
-| `token` | `${{ github.token }}` | 读取 stargazer 数据的 token。私有仓库或跨组织仓库可传 PAT。 |
+| `token` | 必填 | 属于仓库管理员或协作者、用于读取 stargazer 数据的 PAT。 |
 | `github-token` | `${{ github.token }}` | 推送生成 SVG 到输出分支的 token。 |
 | `output-dir` | `star-history` | 发布前存放 SVG 的临时目录。 |
 | `publish-branch` | `output` | 承载生成 SVG 的分支。 |
@@ -83,14 +88,6 @@ jobs:
 | `light_url` | 稳定亮色 SVG 的 GitHub raw URL。 |
 | `dark_url` | 稳定暗色 SVG 的 GitHub raw URL。 |
 | `files` | 稳定 SVG 路径列表，以换行分隔。 |
-
-## 不使用封装 action
-
-如果你只想复制原始思路，可以直接使用 [examples/standalone-workflow.yml](examples/standalone-workflow.yml)。它等价于：
-
-1. 调用 `narayann7/star-history-action@v1` 生成 SVG。
-2. 把带时间戳的文件改名成稳定文件名。
-3. 用 `peaceiris/actions-gh-pages@v4` 发布到 `output` 分支。
 
 ## 发布版本
 
@@ -117,7 +114,9 @@ permissions:
   contents: write
 ```
 
-默认的 `${{ github.token }}` 对当前仓库通常够用。生成其他仓库、组织仓库或私有仓库图表时，建议传入 PAT：
+从 2026 年 7 月起，GitHub 把 stargazer 列表接口限制为仅仓库管理员和协作者可读。
+自动注入的 `${{ github.token }}` 是 App token，不是用户 token，已无法满足这个身份
+检查。请通过仓库 Secret 传入属于管理员或协作者的 PAT：
 
 ```yaml
 - uses: ranxi2001/star-history-ci@v1
@@ -125,6 +124,9 @@ permissions:
     repos: owner/repo
     token: ${{ secrets.STAR_HISTORY_TOKEN }}
 ```
+
+PAT 只用于读取 stargazer 数据。发布生成文件仍通过单独的 `github-token` 参数使用
+自动注入的 `${{ github.token }}`。
 
 ## Star History
 
@@ -141,4 +143,4 @@ permissions:
 
 ## License
 
-MIT
+MIT。复刻的渲染器和字体许可证保留在 [`renderer/`](renderer/NOTICE.md) 中。

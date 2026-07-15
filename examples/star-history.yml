@@ -21,3 +21,4 @@ jobs:
       - uses: ranxi2001/star-history-ci@v1
         with:
           repos: ${{ github.repository }}
+          token: ${{ secrets.STAR_HISTORY_TOKEN }}

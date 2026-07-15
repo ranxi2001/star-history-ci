@@ -51,11 +51,13 @@ for theme in "${themes[@]}"; do
   stable="$output_dir/$prefix-$theme.svg"
   candidates=("$output_dir/$prefix-$theme-"*.svg)
 
-  if [ "${#candidates[@]}" -gt 0 ]; then
+  if [ -f "$stable" ]; then
+    rm -f "$output_dir/$prefix-$theme-"*.svg
+  elif [ "${#candidates[@]}" -gt 0 ]; then
     latest="$(printf '%s\n' "${candidates[@]}" | sort | tail -n 1)"
     mv -f "$latest" "$stable"
     rm -f "$output_dir/$prefix-$theme-"*.svg
-  elif [ ! -f "$stable" ]; then
+  else
     echo "::warning::No generated SVG found for theme '$theme'."
     continue
   fi

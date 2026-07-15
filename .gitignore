@@ -2,5 +2,6 @@
 Thumbs.db
 
 star-history/
+renderer/node_modules/
 tmp/
 *.log

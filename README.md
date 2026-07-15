@@ -2,23 +2,29 @@
 
 [简体中文](README.zh-CN.md)
 
-A tiny GitHub Action wrapper for keeping star-history SVGs alive in your README.
+A self-contained GitHub Action for keeping star-history SVGs alive in your README.
 
 It renders the charts in CI, renames the generated SVGs to stable filenames, and publishes them to an `output` branch. Your README can then reference stable `raw.githubusercontent.com` URLs instead of committing generated images back to the default branch.
 
-This project is intentionally small. It is a CI recipe packaged as a reusable action, plus a standalone workflow for users who prefer copy-paste setup.
+The renderer and output-branch publisher run from source in this repository. No
+third-party rendering or publishing Action is invoked at runtime.
 
 ## How It Works
 
 ```text
 scheduled or manual workflow
-  -> render light/dark star-history SVGs
-  -> rename timestamped files to stable filenames
-  -> publish files to the output branch
+  -> install locked renderer dependencies
+  -> render stable light/dark SVGs locally
+  -> publish with the repository's local git script
   -> embed the raw SVG URLs in README
 ```
 
 ## Quick Start
+
+Create a repository secret named `STAR_HISTORY_TOKEN` from a PAT owned by an
+admin or collaborator of the repository. Prefer a fine-grained PAT limited to
+this repository with read-only metadata access; a classic PAT needs the
+`public_repo` scope.
 
 Create `.github/workflows/star-history.yml` in your repository:
 
@@ -46,6 +52,7 @@ jobs:
       - uses: ranxi2001/star-history-ci@v1
         with:
           repos: ${{ github.repository }}
+          token: ${{ secrets.STAR_HISTORY_TOKEN }}
 ```
 
 Then embed the stable SVGs in your README:
@@ -66,7 +73,7 @@ Replace `<owner>/<repo>` with your repository name, for example `ranxi2001/zero2
 | Name | Default | Description |
 | --- | --- | --- |
 | `repos` | `${{ github.repository }}` | Repository list to render, using comma-separated `owner/repo` values. |
-| `token` | `${{ github.token }}` | Token used by the renderer to read stargazer data. Use a PAT for private repos or cross-org repos. |
+| `token` | Required | PAT owned by a repository admin or collaborator and used to read stargazer data. |
 | `github-token` | `${{ github.token }}` | Token used to publish generated SVGs to the output branch. |
 | `output-dir` | `star-history` | Temporary directory for rendered SVGs before publishing. |
 | `publish-branch` | `output` | Branch that hosts the generated SVG files. |
@@ -85,14 +92,6 @@ Replace `<owner>/<repo>` with your repository name, for example `ranxi2001/zero2
 | `light_url` | Raw GitHub URL for the stable light SVG. |
 | `dark_url` | Raw GitHub URL for the stable dark SVG. |
 | `files` | Newline-separated list of stable SVG paths. |
-
-## Standalone Workflow
-
-If you do not want to depend on this wrapper action, copy [examples/standalone-workflow.yml](examples/standalone-workflow.yml). It uses the same underlying idea:
-
-1. Render SVGs with `narayann7/star-history-action@v1`.
-2. Rename timestamped files to stable filenames.
-3. Publish the directory to the `output` branch with `peaceiris/actions-gh-pages@v4`.
 
 ## Releasing
 
@@ -119,7 +118,10 @@ permissions:
   contents: write
 ```
 
-The default `${{ github.token }}` is usually enough for the current repository. For private repositories, organization repositories, or charts generated from another repository, pass a PAT:
+Since July 2026, GitHub limits the stargazer listing endpoints to repository
+admins and collaborators. The automatic `${{ github.token }}` is an app token,
+not a user token, and no longer satisfies that identity check. Pass a PAT owned
+by an admin or collaborator through a repository secret:
 
 ```yaml
 - uses: ranxi2001/star-history-ci@v1
@@ -127,6 +129,10 @@ The default `${{ github.token }}` is usually enough for the current repository. 
     repos: owner/repo
     token: ${{ secrets.STAR_HISTORY_TOKEN }}
 ```
+
+The PAT is used only to read stargazer data. Publishing the generated files
+continues to use the automatic `${{ github.token }}` through the separate
+`github-token` input.
 
 ## Star History
 
@@ -141,4 +147,5 @@ Issues and pull requests are welcome. Please keep each PR focused on one change.
 
 ## License
 
-MIT
+MIT. The vendored renderer and fonts retain their original notices in
+[`renderer/`](renderer/NOTICE.md).

@@ -12,9 +12,8 @@ inputs:
     required: false
     default: ${{ github.repository }}
   token:
-    description: GitHub token used by the renderer to read stargazer data.
-    required: false
-    default: ${{ github.token }}
+    description: PAT owned by a repository admin or collaborator and used to read stargazer data.
+    required: true
   github-token:
     description: GitHub token used to publish the generated SVGs to the output branch.
     required: false
@@ -68,18 +67,40 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Validate stargazer token
+      shell: bash
+      env:
+        STAR_HISTORY_TOKEN: ${{ inputs.token }}
+      run: |
+        if [[ -z "$STAR_HISTORY_TOKEN" ]]; then
+          echo "::error::The token input is required. Pass a PAT owned by a repository admin or collaborator."
+          exit 1
+        fi
+
+    - name: Set up Node
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      with:
+        node-version: "24"
+
+    - name: Install renderer dependencies
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+      run: cd "$ACTION_PATH/renderer" && npm ci --no-audit --no-fund
+
     - name: Render star history
       id: render
-      uses: narayann7/star-history-action@v1
-      with:
-        repos: ${{ inputs.repos }}
-        token: ${{ inputs.token }}
-        type: ${{ inputs.type }}
-        themes: ${{ inputs.themes }}
-        width: ${{ inputs.width }}
-        output-dir: ${{ inputs.output-dir }}
-        commit: "false"
-        update-readme: "false"
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+        REPOS: ${{ inputs.repos }}
+        OUTPUT_DIR: ${{ inputs.output-dir }}
+        FILE_PREFIX: ${{ inputs.file-prefix }}
+        TYPE: ${{ inputs.type }}
+        THEMES: ${{ inputs.themes }}
+        WIDTH: ${{ inputs.width }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: bash "$ACTION_PATH/scripts/render-charts.sh"
 
     - name: Normalize stable filenames
       id: normalize
@@ -93,9 +114,14 @@ runs:
       run: bash "${{ github.action_path }}/scripts/normalize-star-history.sh"
 
     - name: Publish output branch
-      uses: peaceiris/actions-gh-pages@v4
-      with:
-        github_token: ${{ inputs.github-token }}
-        publish_dir: ${{ inputs.output-dir }}
-        publish_branch: ${{ inputs.publish-branch }}
-        force_orphan: ${{ inputs.force-orphan }}
+      shell: bash
+      env:
+        PUBLISH_TOKEN: ${{ inputs.github-token }}
+        PUBLISH_DIR: ${{ inputs.output-dir }}
+        PUBLISH_BRANCH: ${{ inputs.publish-branch }}
+        FORCE_ORPHAN: ${{ inputs.force-orphan }}
+        REPOSITORY: ${{ github.repository }}
+        SERVER_URL: ${{ github.server_url }}
+        SOURCE_SHA: ${{ github.sha }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: bash "$ACTION_PATH/scripts/publish-output.sh"
