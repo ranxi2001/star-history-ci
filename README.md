@@ -49,7 +49,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ranxi2001/star-history-ci@v1
+      - uses: ranxi2001/star-history-ci@v2
         with:
           repos: ${{ github.repository }}
           token: ${{ secrets.STAR_HISTORY_TOKEN }}
@@ -95,18 +95,20 @@ Replace `<owner>/<repo>` with your repository name, for example `ranxi2001/zero2
 
 ## Releasing
 
-After pushing this project to GitHub, create a major version tag so users can reference `@v1`:
+Version 2 requires an admin or collaborator PAT. Create an immutable release tag
+and a moving major tag so users can reference `@v2`:
 
 ```bash
-git tag v1
-git push origin v1
+git tag v2.0.0
+git tag v2
+git push origin v2.0.0 v2
 ```
 
-For later compatible updates, move the `v1` tag after creating the release commit:
+For later compatible updates, move the `v2` tag after creating the release commit:
 
 ```bash
-git tag -f v1
-git push -f origin v1
+git tag -f v2
+git push -f origin v2
 ```
 
 ## Permissions
@@ -124,7 +126,7 @@ not a user token, and no longer satisfies that identity check. Pass a PAT owned
 by an admin or collaborator through a repository secret:
 
 ```yaml
-- uses: ranxi2001/star-history-ci@v1
+- uses: ranxi2001/star-history-ci@v2
   with:
     repos: owner/repo
     token: ${{ secrets.STAR_HISTORY_TOKEN }}

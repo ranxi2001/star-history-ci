@@ -45,7 +45,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ranxi2001/star-history-ci@v1
+      - uses: ranxi2001/star-history-ci@v2
         with:
           repos: ${{ github.repository }}
           token: ${{ secrets.STAR_HISTORY_TOKEN }}
@@ -91,18 +91,20 @@ jobs:
 
 ## 发布版本
 
-把这个项目推到 GitHub 后，需要创建一个主版本 tag，这样用户才能用 `@v1` 引用：
+版本 2 要求传入属于管理员或协作者的 PAT。发布时同时创建不可变版本 tag 和浮动主版本
+tag，这样用户可以用 `@v2` 引用：
 
 ```bash
-git tag v1
-git push origin v1
+git tag v2.0.0
+git tag v2
+git push origin v2.0.0 v2
 ```
 
-之后如果是兼容更新，可以在 release commit 后移动 `v1` tag：
+之后如果是兼容更新，可以在 release commit 后移动 `v2` tag：
 
 ```bash
-git tag -f v1
-git push -f origin v1
+git tag -f v2
+git push -f origin v2
 ```
 
 ## 权限说明
@@ -119,7 +121,7 @@ permissions:
 检查。请通过仓库 Secret 传入属于管理员或协作者的 PAT：
 
 ```yaml
-- uses: ranxi2001/star-history-ci@v1
+- uses: ranxi2001/star-history-ci@v2
   with:
     repos: owner/repo
     token: ${{ secrets.STAR_HISTORY_TOKEN }}
