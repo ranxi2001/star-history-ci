@@ -21,10 +21,36 @@ scheduled or manual workflow
 
 ## Quick Start
 
-Create a repository secret named `STAR_HISTORY_TOKEN` from a PAT owned by an
-admin or collaborator of the repository. Prefer a fine-grained PAT limited to
-this repository with read-only metadata access; a classic PAT needs the
-`public_repo` scope.
+### 1. Create a personal access token
+
+Open [New fine-grained personal access token](https://github.com/settings/personal-access-tokens/new)
+and configure it as follows:
+
+- `Resource owner`: the account or organization that owns the target repository.
+- `Repository access`: `Only select repositories`, then select every repository listed in `repos`.
+- `Repository permissions`: `Metadata: Read-only` (normally added automatically); leave other permissions disabled.
+
+The GitHub user creating the token must be an admin or collaborator of every
+target repository. As a fallback, a [classic token](https://github.com/settings/tokens/new)
+works with only the `public_repo` scope for public repositories.
+
+### 2. Add the token to the target repository
+
+The secret belongs in the repository that **runs this workflow**, not in the
+`star-history-ci` repository. Open the target repository, then go to
+`Settings` -> `Secrets and variables` -> `Actions` -> `New repository secret`.
+The direct URL follows this exact pattern:
+
+```text
+https://github.com/<owner>/<repo>/settings/secrets/actions/new
+```
+
+Set `Name` to `STAR_HISTORY_TOKEN`, paste the new token into `Secret`, and click
+`Add secret`. Repository secrets are not shared automatically, so repeat this
+step for every project that uses the Action. Do not put the token in workflow
+YAML, repository variables, commits, issues, or chat messages.
+
+### 3. Add the workflow
 
 Create `.github/workflows/star-history.yml` in your repository:
 
@@ -55,7 +81,9 @@ jobs:
           token: ${{ secrets.STAR_HISTORY_TOKEN }}
 ```
 
-Then embed the stable SVGs in your README:
+### 4. Embed the chart
+
+Embed the stable SVGs in your README:
 
 ```html
 ## Star History
@@ -122,8 +150,9 @@ permissions:
 
 Since July 2026, GitHub limits the stargazer listing endpoints to repository
 admins and collaborators. The automatic `${{ github.token }}` is an app token,
-not a user token, and no longer satisfies that identity check. Pass a PAT owned
-by an admin or collaborator through a repository secret:
+not a user token, and no longer satisfies that identity check. Configure
+`STAR_HISTORY_TOKEN` in the repository that runs the workflow as described in
+[Quick Start](#quick-start), then pass it through the `token` input:
 
 ```yaml
 - uses: ranxi2001/star-history-ci@v2

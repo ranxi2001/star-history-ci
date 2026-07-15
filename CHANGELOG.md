@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Document direct PAT and per-repository Actions Secret setup for consuming projects.
+
 ## [2.0.0] - 2026-07-15
 
 ### Breaking

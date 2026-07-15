@@ -18,9 +18,34 @@
 
 ## 快速使用
 
-先创建名为 `STAR_HISTORY_TOKEN` 的仓库 Secret。它应保存属于该仓库管理员或
-协作者的 PAT。优先使用仅授权当前仓库、只有只读 Metadata 权限的 fine-grained
-PAT；classic PAT 需要 `public_repo` scope。
+### 1. 创建个人访问令牌
+
+打开 [创建 fine-grained PAT](https://github.com/settings/personal-access-tokens/new)，
+按下面配置：
+
+- `Resource owner`：目标仓库所属的个人账号或组织。
+- `Repository access`：选择 `Only select repositories`，然后选中 `repos` 参数中列出的所有仓库。
+- `Repository permissions`：只保留 `Metadata: Read-only`（通常会自动附带），其他权限全部关闭。
+
+创建 token 的 GitHub 用户必须是每个目标仓库的管理员或协作者。公开仓库也可以使用
+[classic token](https://github.com/settings/tokens/new)，只勾选 `public_repo`。
+
+### 2. 把 token 加到目标项目
+
+Secret 必须创建在**运行这个 workflow 的目标仓库**中，不是创建在
+`star-history-ci` 仓库中。进入目标仓库，依次打开
+`Settings` -> `Secrets and variables` -> `Actions` -> `New repository secret`。
+直接地址必须使用下面这个顺序：
+
+```text
+https://github.com/<owner>/<repo>/settings/secrets/actions/new
+```
+
+`Name` 填 `STAR_HISTORY_TOKEN`，`Secret` 粘贴刚生成的 token，然后点击
+`Add secret`。仓库 Secret 不会自动共享，所有使用本 Action 的项目都要分别配置。
+不要把 token 写进 workflow YAML、仓库 Variables、commit、Issue 或聊天消息。
+
+### 3. 添加 workflow
 
 在目标仓库创建 `.github/workflows/star-history.yml`：
 
@@ -51,7 +76,9 @@ jobs:
           token: ${{ secrets.STAR_HISTORY_TOKEN }}
 ```
 
-然后在 README 中引用 `output` 分支的稳定 SVG：
+### 4. 引用生成的图表
+
+在 README 中引用 `output` 分支的稳定 SVG：
 
 ```html
 ## Star History
@@ -118,7 +145,8 @@ permissions:
 
 从 2026 年 7 月起，GitHub 把 stargazer 列表接口限制为仅仓库管理员和协作者可读。
 自动注入的 `${{ github.token }}` 是 App token，不是用户 token，已无法满足这个身份
-检查。请通过仓库 Secret 传入属于管理员或协作者的 PAT：
+检查。请按[快速使用](#快速使用)在运行 workflow 的仓库中配置
+`STAR_HISTORY_TOKEN`，再通过 `token` 参数传入：
 
 ```yaml
 - uses: ranxi2001/star-history-ci@v2
