@@ -18,6 +18,9 @@
 
 ## 快速使用
 
+想让编码 Agent 自动完成仓库修改并验证实际运行结果，可以直接使用这份
+[Agent 接入 Prompt](prompt.md)。
+
 ### 1. 创建个人访问令牌
 
 打开 [创建 fine-grained PAT](https://github.com/settings/personal-access-tokens/new)，

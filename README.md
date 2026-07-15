@@ -21,6 +21,9 @@ scheduled or manual workflow
 
 ## Quick Start
 
+Prefer to let a coding agent handle the repository changes and verification?
+Use the ready-to-paste [Agent setup prompt](prompt.md).
+
 ### 1. Create a personal access token
 
 Open [New fine-grained personal access token](https://github.com/settings/personal-access-tokens/new)
